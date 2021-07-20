@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# A custom header for Ubuntu servers.
+
+HOSTNAME=$(uname -n)
+U=$(echo "$USER")
+
+figlet ${HOSTNAME}
+echo "Welcome ${U}! Have a nice day!" 
