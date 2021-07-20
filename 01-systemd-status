@@ -1,0 +1,66 @@
+#!/bin/bash
+
+service_name=("dnsmasq" "nginx" "docker" ) 
+device_name=("wg0")
+
+printf "\n"
+printf "%30s \n" "Critical Systemd Unit Status"
+printf '%.0s-' {1..32}; echo
+
+for i in ${service_name[@]}; do
+	service_status=$(systemctl --type=service | grep ${i} |awk '{print $4}')
+	service_active=$(systemctl --type=service | grep ${i} | awk '{print $3}')
+	status_color=""
+	failure_bold=""
+
+	if [ "${service_active}" != "active" ]; then
+		status_color="\e[31m"
+	elif [ "${service_active}" == "active" ] && [ ${service_status} != "running" ]; then
+		status_color="\e[33m"
+	else
+		status_color="\e[32m"
+	fi
+
+	if [ "${service_status}" == "failure" ]; then
+		failure_bold="\e[1m"
+	fi
+
+	#bold_dot="\e[1m•"
+	#end_format="\e[0m"
+	service_status="$(tr '[:lower:]' '[:upper:]' <<< ${service_status:0:1})${service_status:1}"
+	name="${i} status: "
+	name="$(tr '[:lower:]' '[:upper:]' <<< ${name:0:1})${name:1}"
+
+	printf "%b %b %-18s %b %b %-10s %b\n" "${status_color}" "\e[1m•\e[0m" "${name}" "${status_color}" "${failure_bold}" "${service_status}" "\e[0m"
+done
+
+for i in ${device_name[@]}; do
+	device_status=$(systemctl --type=device | grep virtual-net | grep ${i} | awk '{print $4}')
+	device_active=$(systemctl --type=device | grep virtual-net | grep ${i} | awk '{print $3}')
+	device_color=""
+	device_bold=""
+
+	if [ "${device_status}" == "plugged" ]; then
+		device_color="\e[32m"
+	else
+		device_color="\e[31m"
+	fi
+
+	if [ "${device_status}" == "plugged" ]; then
+		device_status="connected"
+	else
+		device_status="failed"
+	fi
+
+	device_status="$(tr '[:lower:]' '[:upper:]' <<< ${device_status:0:1})${device_status:1}"
+
+	if [ ${i} == "wg0" ]; then
+		name="WireGuard status: "
+	else
+		name="${1} status: "
+	fi
+
+	printf "%b %b %-19s %b %-10s %b\n" "${device_color}" "\e[1m•\e[0m" "${name}" "${device_color}" "${device_status}" "\e[0m"
+done
+
+printf "\n"
